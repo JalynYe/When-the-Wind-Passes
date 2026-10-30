@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Environment} from '../dist/environment.js';
+const scene=()=>({leaves:Array.from({length:100},(_,i)=>({x:200+i,y:300,state:'attached',size:40}))});
+test('winter contact releases bounded snow that clears and replenishes',()=>{const e=new Environment();e.configure('season','winter');e.bind(scene());e.touch({x:180,y:300},{x:340,y:300});assert.ok(e.particles.length>0&&e.particles.length<=180);assert.ok(e.coats.some(c=>c.amount===0));for(let i=0;i<1200;i++)e.step(1/60);assert.equal(e.particles.length,0);assert.ok(e.coats.every(c=>c.amount===1))});
+test('rain droplets release locally, reduced motion skips particles, switches clear state',()=>{const e=new Environment();e.configure('weather','rain');e.bind(scene());e.touch({x:-200,y:0},{x:-100,y:0});assert.equal(e.particles.length,0);e.touch({x:200,y:300},{x:250,y:300},true);assert.equal(e.particles.length,0);assert.ok(e.coats.some(c=>c.amount===0));e.configure('period','night');assert.equal(e.coats.length,0);assert.equal(e.particles.length,0)});
+test('night fireflies scatter nearby and settle with reduced motion',()=>{const e=new Environment();e.period='night';const f=e.flies[0];e.touch({x:f.x-5,y:f.y},{x:f.x,y:f.y+5});assert.equal(f.glow,1);assert.ok(Math.hypot(f.vx,f.vy)>0);e.step(1/60,true);assert.equal(f.vx,0);assert.equal(f.vy,0);e.reset();assert.ok(e.flies.every(f=>f.glow===0))});

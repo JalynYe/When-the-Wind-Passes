@@ -169,6 +169,23 @@ function makeJacaranda(){
   const flower=leaves[leaves.length-1];
   flower.t=.18+random()*.43;flower.size=23+random()*9;flower.offset=6+random()*13;
  }
+ // Uneven overlapping flower pockets soften the diagonal without tracing its outline.
+ const innerPockets=[
+  {t:.055,spread:.035,side:1,offset:9,size:31,count:12},
+  {t:.13,spread:.055,side:-1,offset:14,size:35,count:20},
+  {t:.205,spread:.04,side:1,offset:5,size:28,count:11},
+  {t:.275,spread:.065,side:1,offset:18,size:34,count:23},
+  {t:.35,spread:.035,side:-1,offset:8,size:27,count:16}
+ ];
+ for(const pocket of innerPockets)for(let i=0;i<pocket.count;i++){
+  bloom(leaders[3],false,true);
+  const flower=leaves[leaves.length-1];
+  flower.t=pocket.t+(random()-.5)*pocket.spread*2;
+  flower.side=random()<.82?pocket.side:-pocket.side;
+  flower.size=pocket.size*(.72+random()*.48);
+  flower.offset=pocket.offset*(.35+random()*1.05);
+  flower.layer='front';
+ }
  // Fill the two exposed outer branch tips with small, airy flower clouds.
  for(let i=0;i<32;i++){bloom(twigs[[3,5][i%2]],true);const flower=leaves[leaves.length-1];flower.size*=.85;flower.edgeFill=true}
  // Bridge the right shoulder while keeping the lower edge tucked into the crown.
@@ -192,6 +209,10 @@ function makeJacaranda(){
  const farRightTip=twigs[27];
  for(let i=leaves.length-1;i>=0;i--)if(leaves[i].branch===farRightTip)leaves.splice(i,1);
  branches[farRightTip].hidden=true;
+ // Add a little exposed trunk while keeping the crown's branch curves intact.
+ const stem=branches[0];
+ stem.c=stem.c.map(([x,y],i)=>[x,y-(i?26:0)]);
+ for(const b of branches)if(b.parent>=0){const parent=branches[b.parent],p=curvePoint(parent.c,b.t);b.restOrigin={x:parent.restOrigin.x+p.x,y:parent.restOrigin.y+p.y};b.origin={...b.restOrigin}}
  leaves.forEach((l,i)=>l.id=i);
  return{branches,leaves};
 }

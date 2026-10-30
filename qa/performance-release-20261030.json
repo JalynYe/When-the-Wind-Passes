@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-30",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "method": "Desktop browser, synthetic wind, 12 measured update/render samples per scene after 3 warm-up frames. Values are CPU milliseconds, not real-phone FPS; timings vary with system load.",
+  "medianMs": {
+    "maple": [
+      23.3,
+      1.9,
+      28.1
+    ],
+    "ginkgo": [
+      14.3,
+      1.3,
+      13.5
+    ],
+    "cherry": [
+      10.6,
+      2,
+      13.8
+    ],
+    "willow": [
+      13,
+      3.2,
+      21.5
+    ],
+    "jacaranda": [
+      12.3,
+      1,
+      12
+    ],
+    "muhly": [
+      0.4,
+      0.3,
+      0.3
+    ],
+    "needle": [
+      2.3,
+      2.4,
+      3
+    ]
+  },
+  "sceneOrder": [
+    "day",
+    "rain",
+    "moon"
+  ],
+  "idleTreeRedraws": 0,
+  "browserErrors": 0,
+  "testsPassed": 38,
+  "spriteParityMeanChannelError": 0.87,
+  "notes": [
+    "Rain tree paint is capped near 30Hz on mobile; rain and ripples continue updating separately.",
+    "Cached contact shadow replaces dynamic Canvas readback.",
+    "No guarantee of full frame rate on all mobile devices."
+  ]
+}

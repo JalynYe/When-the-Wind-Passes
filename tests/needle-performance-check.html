@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8"><title>Needle rendering check</title><pre id="result">Checking…</pre><script type="module">
+import {NeedleGrassField} from '../dist/needle-grass.js?v=20261030batch';
+try{
+ const image=new Image();image.src='../dist/assets/needle-tuft-image-v4.png';await image.decode();
+ const canvas=document.createElement('canvas');canvas.width=390;canvas.height=844;document.body.append(canvas);const ctx=canvas.getContext('2d'),drawImage=ctx.drawImage.bind(ctx);let calls=0;ctx.drawImage=(...args)=>{calls++;return drawImage(...args)};
+ const field=new NeedleGrassField(),textures=Array(8).fill(image);field.draw(ctx,390,844,textures,660,'day');if(field.gpuFailed)throw Error('GPU renderer failed');
+ const measure=()=>{calls=0;const times=[];for(let i=0;i<20;i++){field.step(1/60);ctx.clearRect(0,0,390,844);const start=performance.now();field.draw(ctx,390,844,textures,660,'day');times.push(performance.now()-start)}return{callsPerFrame:calls/20,averageMs:times.reduce((a,b)=>a+b)/times.length}};
+ const gpu=measure();field.gpuFailed=true;const fallback=measure();if(gpu.callsPerFrame!==1||fallback.callsPerFrame<1000)throw Error('Draw-call reduction missing');
+ field.gpuFailed=false;field.draw(ctx,390,844,textures,660,'moon');const pixels=ctx.getImageData(0,0,390,844).data;if(!pixels.some((v,i)=>i%4===3&&v>0))throw Error('Blank GPU output');
+ field.grassMesh.lost=true;field.draw(ctx,390,844,textures,660,'moon');if(!field.gpuFailed)throw Error('Context-loss fallback missing');field.dispose();
+ document.querySelector('#result').textContent='PASS: batching, nonblank moon rendering, context-loss fallback and disposal. '+JSON.stringify({tufts:field.tufts.length,gpu,fallback});
+}catch(e){document.querySelector('#result').textContent='FAIL: '+e.stack}
+</script>

@@ -5,13 +5,18 @@ try{
  const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765');await page.waitForTimeout(300);
- assert.equal(await page.locator('button').count(),6);
- assert.deepEqual(await page.locator('.species-picker button').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-label'))),['梧桐叶','银杏叶','樱花','垂柳']);
+ assert.equal(await page.locator('button').count(),10);
+ assert.deepEqual(await page.locator('.species-picker button').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-label'))),['梧桐叶','银杏叶','樱花','垂柳','蓝花楹','粉黛乱子草']);
+ assert.equal(await page.locator('.scene-caption').count(),0);
+ await page.getByRole('button',{name:'切换到白天'}).click();
+ assert.equal(await page.locator('main').getAttribute('data-scene'),'day');
+ await page.getByRole('button',{name:'切换到雨天'}).click();
  const before=await page.locator('canvas').evaluate(el=>el.toDataURL());
  await page.getByRole('button',{name:'轻吹一下'}).click();await page.waitForTimeout(600);
  assert.equal((await page.locator('canvas').evaluate(el=>el.toDataURL()))===before,false,'breeze must change the tree');
  await page.getByRole('button',{name:'重新长满'}).click();await page.waitForTimeout(100);
- assert.equal((await page.locator('canvas').evaluate(el=>el.toDataURL()))===before,true,'reset restores original scene');
+ assert.ok((await page.locator('canvas').evaluate(el=>el.toDataURL())).length>1000,'reset keeps the rainy scene rendered');
+ assert.equal(await page.locator('.environment-picker').count(),0,'rain scene replaces environment combinations');
  await page.emulateMedia({reducedMotion:'reduce'});await page.getByRole('button',{name:'轻吹一下'}).click();await page.waitForTimeout(600);
  await page.locator('[data-species="ginkgo"]').click();await page.waitForTimeout(100);
  assert.equal(await page.locator('[data-species="ginkgo"]').getAttribute('aria-pressed'),'true');
@@ -20,8 +25,10 @@ try{
  await page.locator('[data-species="cherry"]').click();await page.waitForTimeout(100);
  assert.equal(await page.locator('[data-species="cherry"]').getAttribute('aria-pressed'),'true');
  await page.locator('[data-species="willow"]').click();await page.waitForTimeout(100);assert.equal(await page.locator('[data-species="willow"]').getAttribute('aria-pressed'),'true');
+ await page.locator('[data-species="jacaranda"]').click();await page.waitForTimeout(100);assert.equal(await page.locator('[data-species="jacaranda"]').getAttribute('aria-pressed'),'true');
+ await page.locator('[data-species="muhly"]').click();await page.waitForTimeout(100);assert.equal(await page.locator('[data-species="muhly"]').getAttribute('aria-pressed'),'true');
  await page.locator('[data-species="maple"]').click();
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(100);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- assert.deepEqual(errors,[]);console.log('Passed: four tree choices, breeze, reset, reduced motion and mobile layout.');
+ assert.deepEqual(errors,[]);console.log('Passed: six plant choices, breeze, reset, reduced motion and mobile layout.');
 }finally{await browser.close()}

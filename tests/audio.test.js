@@ -1,61 +1,17 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import {WindAudio} from '../dist/audio.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {WindAudio,makeMusicBuffer,makeRainBuffer,makeBranchBuffer} from '../dist/audio.js';
+function context(){const buffers=[];const parameter=()=>({value:0,events:[],cancelAndHoldAtTime(t){this.events.push(['hold',t])},setTargetAtTime(v,t,c){this.events.push(['target',v,t,c])},linearRampToValueAtTime(v,t){this.events.push(['ramp',v,t])}});const sources=[];const ctx={sampleRate:8000,currentTime:0,state:'suspended',destination:{},buffers,sources,createBuffer(channels,length){const data=Array.from({length:channels},()=>new Float32Array(length));const b={length,numberOfChannels:channels,getChannelData:i=>data[i]};buffers.push(b);return b},createGain(){return {gain:parameter(),connect(n){return n},disconnect(){}}},createBiquadFilter(){return {frequency:{value:0},Q:{value:0},connect(n){return n}}},createBufferSource(){const s={connect(n){return n},start(at){this.started=true;this.at=at},stop(){},disconnect(){}};sources.push(s);return s},resume(){this.state='running';return Promise.resolve()},suspend(){this.state='suspended';return Promise.resolve()}};return ctx}
+test('synthesized music and rain are finite stereo loops with headroom and continuous seams',()=>{const c=context();for(const make of [makeMusicBuffer,makeRainBuffer]){const b=make(c);assert.equal(b.numberOfChannels,2);for(let channel=0;channel<2;channel++){const d=b.getChannelData(channel);let energy=0,peak=0;for(const v of d){assert.ok(Number.isFinite(v));energy+=v*v;peak=Math.max(peak,Math.abs(v))}assert.ok(Math.sqrt(energy/d.length)>.002);assert.ok(peak<.6);assert.ok(Math.abs(d[0]-d[d.length-1])<.035)}}});
+test('weather fades rain out in daytime and keeps the music playback position',()=>{const c=context(),audio=new WindAudio();audio.setup(c);const music=audio.musicSource;audio.setWeather('day');assert.equal(audio.rainGain.gain.events.at(-1)[1],0);assert.equal(audio.musicGain.gain.events.at(-1)[1],.85);audio.setWeather('rain');assert.equal(audio.rainGain.gain.events.at(-1)[1],.75);assert.equal(audio.musicGain.gain.events.at(-1)[1],.3);audio.setWeather('moon');assert.equal(audio.rainGain.gain.events.at(-1)[1],0);assert.equal(audio.musicGain.gain.events.at(-1)[1],.38);assert.equal(audio.musicSource,music);assert.equal(c.sources.length,4);assert.ok(c.sources.every(s=>s.loop&&s.started))});
+test('mute, background pause and repeated activation never duplicate sound sources',async()=>{const oldWindow=globalThis.window,c=context();globalThis.window={AudioContext:class{constructor(){return c}}};try{const audio=new WindAudio();audio.enabled=true;audio.activate();assert.equal(c.state,'running');audio.setEnabled(false);assert.equal(c.state,'suspended');audio.visibility(false);assert.equal(c.state,'suspended');audio.setEnabled(true);assert.equal(c.state,'running');audio.visibility(true);assert.equal(c.state,'suspended');audio.activate();assert.equal(c.state,'suspended');audio.visibility(false);assert.equal(c.state,'running');audio.activate();assert.equal(c.sources.length,4)}finally{globalThis.window=oldWindow}});
 
-function context(){
- const parameters=[];
- const parameter=()=>{const p={value:0,events:[],cancelAndHoldAtTime(t){this.events.push(['hold',t])},setTargetAtTime(v,t,c){this.events.push(['target',v,t,c])}};parameters.push(p);return p};
- const node=()=>({connect(next){return next},start(){},frequency:{value:0},Q:{value:0},gain:parameter()});
- const buffers=[];
- return {sampleRate:1000,currentTime:0,state:'suspended',destination:{},parameters,buffers,
-  createBuffer(channels,length){const data=new Float32Array(length);buffers.push(data);return{getChannelData(){return data}}},
-  createBufferSource:node,createBiquadFilter:node,createGain:node,
-  resume(){this.state='running';return Promise.resolve()},suspend(){this.state='suspended';return Promise.resolve()}};
-}
+test('branch notes merge repeats, normalize density and fade old voices at the limit',()=>{const c=context(),a=new WindAudio();a.setup(c);c.state='running';assert.equal(a.playBranch(67,.5),true);assert.equal(a.playBranch(67,.5),false);for(const [i,midi] of [60,64,72,76,79].entries()){c.currentTime=(i+1)*.4;assert.equal(a.playBranch(midi,.5),true)}assert.equal(a.voices.length,4);assert.ok(a.voices.every(v=>[0,4,7].includes(v.midi%12)));assert.equal(a.duckGain.gain.events.filter(e=>e[0]==='target').at(-2)[1],.38);c.currentTime=3;a.playBranch(96);assert.ok(a.voices.every(v=>[0,4,7].includes(v.midi%12)&&v.midi>=48&&v.midi<=72));a.setEnabled(false);assert.equal(a.playBranch(67),false)});
 
-test('wind and soft leaves share a smooth procedural loop',async()=>{
- const oldWindow=globalThis.window;
- const ctx=context();globalThis.window={AudioContext:class{constructor(){return ctx}}};
- try{
-  const audio=new WindAudio();await audio.activate();
-  assert.equal(ctx.buffers.length,1);
-  assert.ok(ctx.buffers.every(buffer=>{
-   let steps=0;for(let i=1;i<buffer.length;i++)steps+=(buffer[i]-buffer[i-1])**2;
-   return Math.abs(buffer[0]-buffer.at(-1))<3*Math.sqrt(steps/(buffer.length-1));
-  }));
-  const samples=ctx.buffers[0];
-  assert.ok(samples.length>=ctx.sampleRate*30);
-  assert.ok(samples.some(value=>Math.abs(value)>.1));
-  assert.equal(typeof audio.gust,'undefined');
-  assert.ok(audio.ambientWind.gain.events.some(event=>event[0]==='target'&&event[1]>0));
-  assert.ok(audio.ambientLeaves.gain.events.some(event=>event[0]==='target'&&event[1]>0));
-  assert.equal(ctx.state,'running');
- }finally{globalThis.window=oldWindow}
-});
+test('low do remains available as a quieter C3 voice',()=>{const c=context(),a=new WindAudio();a.setup(c);c.state='running';assert.equal(a.playBranch(48,.5),true);assert.equal(a.voices[0].midi,48);assert.ok(a.voices[0].base<.4)});
 
-test('a canopy gesture briefly lifts the existing wind and leaf bands',async()=>{
- const oldWindow=globalThis.window;
- const ctx=context();globalThis.window={AudioContext:class{constructor(){return ctx}}};
- try{
-  const audio=new WindAudio();await audio.activate();
-  ctx.currentTime=1;
-  audio.stir(.8);
-  for(const param of [audio.ambientWind.gain,audio.ambientLeaves.gain]){
-   const targets=param.events.filter(event=>event[0]==='target');
-   assert.ok(targets[1][1]>targets[0][1]);
-   assert.equal(targets[2][1],param.baseLevel);
-   assert.ok(targets[2][2]>targets[1][2]);
-  }
-  assert.equal(ctx.buffers.length,1);
- }finally{globalThis.window=oldWindow}
-});
+function rms(data,rate,start,end){let energy=0;for(let i=Math.round(start*rate);i<Math.round(end*rate);i++)energy+=data[i]*data[i];return Math.sqrt(energy/Math.round((end-start)*rate))}
+test('accompaniment has audible accents and rests, with quieter space in moonlight',()=>{const c=context(),day=makeMusicBuffer(c,'day').getChannelData(0),moon=makeMusicBuffer(c,'moon').getChannelData(0),rate=c.sampleRate;assert.ok(rms(day,rate,.1,.35)>rms(day,rate,1.6,1.85)*1.15);assert.ok(rms(day,rate,7.7,7.95)<rms(day,rate,.1,.35)*.08);assert.ok(rms(moon,rate,1.6,1.85)<rms(day,rate,1.6,1.85)*.2);assert.ok(rms(moon,rate,2.3,2.8)<.00001)});
+test('all scene loops share a clock and crossfade without restarting sources',()=>{const c=context(),a=new WindAudio();a.setup(c);assert.equal(new Set(c.sources.map(s=>s.at)).size,1);for(const weather of ['day','moon','rain','moon']){a.setWeather(weather);for(const layer of a.musicLayers)assert.equal(layer.gain.gain.events.at(-1)[1],layer.weather===weather?1:0)}assert.equal(c.sources.length,4)});
+test('a short strum responds immediately, spaces its notes and tapers, then resets its accent',()=>{const c=context(),a=new WindAudio();a.setup(c);c.state='running';for(const midi of [60,64,67])assert.equal(a.playBranch(midi,.5),true);assert.ok(a.voices[0].at<.02);assert.ok(Math.abs(a.voices[1].at-a.voices[0].at-.125)<1e-8);assert.ok(a.voices[0].base>a.voices[1].base&&a.voices[1].base>a.voices[2].base);c.currentTime=1;a.playBranch(60,.5);assert.ok(Math.abs(a.voices.at(-1).base-.49)<.0001);assert.ok(a.voices.at(-1).at<1.02)});
+test('quiet upper-register plucks remain bounded and have finite tails',()=>{const c=context();for(const midi of [48,60,64,67,72]){const d=makeBranchBuffer(c,midi).getChannelData(0);let peak=0;for(const v of d){assert.ok(Number.isFinite(v));peak=Math.max(peak,Math.abs(v))}assert.ok(peak<.12);assert.ok(rms(d,c.sampleRate,2.9,3.2)<.001)}});
 
-test('mute suspends ambience and unmute resumes it',async()=>{
- const oldWindow=globalThis.window;
- const ctx=context();globalThis.window={AudioContext:class{constructor(){return ctx}}};
- try{
-  const audio=new WindAudio();await audio.activate();
-  audio.setEnabled(false);assert.equal(ctx.state,'suspended');
-  audio.setEnabled(true);await Promise.resolve();assert.equal(ctx.state,'running');
- }finally{globalThis.window=oldWindow}
-});
+test('audio starts in daytime; leaving rain reaches exact silence within 160ms',()=>{const c=context(),a=new WindAudio();assert.equal(a.weather,'day');a.setup(c);assert.deepEqual(a.rainGain.gain.events.at(-1),['ramp',0,.16]);a.setWeather('rain');assert.deepEqual(a.rainGain.gain.events.at(-1),['ramp',.75,.16]);for(const scene of ['day','moon']){c.currentTime+=1;a.setWeather(scene);assert.deepEqual(a.rainGain.gain.events.at(-1),['ramp',0,c.currentTime+.16])}});

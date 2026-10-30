@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>Rendering check</title><pre id="result">Checking…</pre><script type="module">
+import {MuhlyField} from '../dist/muhly-field.js?v=20261030seamless';
+try {
+ const field=new MuhlyField(),im=document.createElement('canvas');im.width=256;im.height=128;const g=im.getContext('2d');const grad=g.createLinearGradient(0,0,256,128);grad.addColorStop(0,'rgba(225,155,181,.3)');grad.addColorStop(1,'rgba(140,93,117,.8)');g.fillStyle=grad;g.fillRect(0,0,256,128);
+ const view={width:320,height:220},p={x:25,y:30,w:270,h:150},layer=field.sweptLayers[0];layer.spec[5]=1;for(const n of layer.nodes)n.head=0;
+ const actual=document.createElement('canvas'),expected=document.createElement('canvas');for(const c of [actual,expected]){c.width=320;c.height=220}
+ const a=actual.getContext('2d'),b=expected.getContext('2d');const gpu=field.drawSweptMesh(a,im,layer,p,view);if(!gpu)throw Error('GPU path unavailable');b.drawImage(im,p.x,p.y,p.w,p.h);
+ const aa=a.getImageData(0,0,320,220).data,bb=b.getImageData(0,0,320,220).data;let max=0,total=0,count=0;
+ for(let y=33;y<177;y++)for(let x=28;x<292;x++)for(let c=0;c<4;c++){const i=(y*320+x)*4+c,d=Math.abs(aa[i]-bb[i]);max=Math.max(max,d);total+=d;count++}
+ if(max>8||total/count>1.8)throw Error('Texture/alpha mismatch '+JSON.stringify({max,mean:total/count}));
+ for(const n of layer.nodes)n.head=.15*Math.sin(n.col*.4+n.row*.3);a.clearRect(0,0,320,220);field.drawSweptMesh(a,im,layer,p,view);const pixels=a.getImageData(0,0,320,220).data;let holes=0;
+ for(let y=40;y<165;y++)for(let x=60;x<280;x++)if(pixels[(y*320+x)*4+3]<30)holes++;
+ if(holes)throw Error('Mesh holes '+holes);
+ document.body.append(actual);document.querySelector('#result').textContent='PASS: WebGL shared-edge rendering; identity texture and alpha preserved; deformed mesh has no transparent cracks. '+JSON.stringify({max,mean:total/count,holes});
+} catch(e){document.querySelector('#result').textContent='FAIL: '+e.stack}
+</script>

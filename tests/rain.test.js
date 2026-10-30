@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {RainScene} from '../dist/rain.js';
+test('rain recycles a bounded population and impacts across viewport sizes',()=>{for(const [w,h] of [[390,844],[1440,900],[844,390]]){const r=new RainScene();r.resize(w,h,h*.74);const n=r.drops.length;assert.ok(new Set(r.drops.map(d=>d.layer)).size===3);let impacts=0;for(let i=0;i<1800;i++){r.step(1/60);impacts=Math.max(impacts,r.impacts.length);assert.equal(r.drops.length,n);assert.ok(r.impacts.length<=45);assert.ok(r.drops.every(d=>Number.isFinite(d.x)&&d.y<=d.end))}assert.ok(impacts>0);r.reset();assert.equal(r.time,0);assert.equal(r.impacts.length,0)}});
+test('reduced motion freezes rain and resizing discards old screen positions',()=>{const r=new RainScene();r.resize(390,844,600);const before=JSON.stringify(r.drops);r.step(10,true);assert.equal(JSON.stringify(r.drops),before);assert.equal(r.time,0);r.resize(1200,800,620);assert.equal(r.width,1200);assert.ok(r.drops.some(d=>d.x>390));assert.equal(r.impacts.length,0)});
+test('wet ground keeps no large puddle regions',()=>{const r=new RainScene();r.resize(1000,1000,700);assert.equal(r.pools.length,0);assert.equal(r.inWater(230,826),false)});

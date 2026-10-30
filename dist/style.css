@@ -7,24 +7,133 @@ main[data-species="ginkgo"]{--sky-top:#c4d4cf;--sky-middle:#dee6dc;--sunlight:#f
 main[data-species="cherry"]{--sky-top:#b9cbd0;--sky-middle:#d1dfe1;--canopy-haze:#9db7bb75;--sunlight:#faf6edb0;--garden-haze:#afc0b53a;--low-light:#f7e9db50}
 main[data-species="willow"]{--sky-top:#bdd3d3;--sky-middle:#d8e5e0;--canopy-haze:#a8c9bf66;--garden-haze:#a9c3ab46;--low-light:#eef0cf67}
 main[data-species="jacaranda"]{--sky-top:#c7d8d9;--sky-middle:#dce5e2;--canopy-haze:#b6c9c67a;--sunlight:#fff7e5cf;--garden-haze:#b8c1b745;--low-light:#f2e9dc63}
+main[data-species="muhly"]{--sky-top:#c8d7d2;--sky-middle:#e0e4df;--canopy-haze:#ddc9ce63;--sunlight:#fff2dfdc;--garden-haze:#b5ab9e44;--low-light:#edd5cd7a}
 main::before{content:"";position:absolute;inset:0;background:url('assets/sky-grain.png') repeat;opacity:.4;pointer-events:none}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 canvas:active{cursor:grabbing}
-nav{position:absolute;z-index:1;right:max(24px,env(safe-area-inset-right));bottom:max(24px,env(safe-area-inset-bottom));display:flex;gap:10px}
-button{font:inherit;cursor:pointer}
-nav button,#sound{width:46px;height:46px;display:grid;place-items:center;border:1px solid #a7bdc1;border-radius:50%;background:#f0f8f6c9;color:#4f6d72}
-nav button:hover,#sound:hover{background:#e6f2f0;color:#344e53}
-#sound{position:absolute;z-index:1;left:max(24px,env(safe-area-inset-left));bottom:max(24px,env(safe-area-inset-bottom))}
+/* Light marks around the scene; transparent targets stay easy to touch. */
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid #456a72;outline-offset:3px}
+svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+#sound,nav button,#weather button{position:relative;width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#607c6c;transition:color .18s}
+#weather{position:absolute;z-index:2;top:calc(34px + env(safe-area-inset-top,0px));right:calc(24px + env(safe-area-inset-right,0px));display:flex;align-items:center;padding:2px;border:0;background:transparent}
+#weather button{color:#71877c}
+#weather button[aria-pressed="true"]{color:#355e49}
+#weather button[aria-pressed="true"] svg{stroke-width:1.55}
+#sound{position:absolute;z-index:2;left:calc(24px + env(safe-area-inset-left,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 #sound[aria-pressed="false"] .sound-wave,#sound[aria-pressed="true"] .sound-slash{display:none}
-button:focus-visible{outline:2px solid #456a72;outline-offset:4px}
-svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
-.species-picker{position:absolute;z-index:1;left:50%;bottom:28px;transform:translateX(-50%);display:flex;gap:16px}
-.species-picker button{position:relative;width:44px;height:48px;display:grid;place-items:center;border:0;background:transparent;padding:0}
-.species-picker button[aria-pressed="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;border-radius:2px;background:#4f7076}
-.species-picker img{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 2px 2px #5c59402e)}
-.species-picker button[data-species="willow"] img{transform:scale(1.12)}
-@media(max-width:600px){
- nav{right:18px;bottom:max(20px,env(safe-area-inset-bottom))}
- #sound{left:18px;bottom:max(20px,env(safe-area-inset-bottom))}
- .species-picker{bottom:max(88px,calc(env(safe-area-inset-bottom) + 72px))}
+nav{position:absolute;z-index:2;right:calc(24px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;gap:20px}
+#breeze{color:#4d7159}
+#reset{color:#7a8c80}
+.species-picker{position:absolute;z-index:2;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:0;border:0;background:transparent}
+.species-picker button{position:relative;width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.species-picker button[aria-pressed="true"]::after{content:"";position:absolute;left:17px;right:17px;bottom:2px;height:1px;background:#52735e}
+.species-picker img{width:32px;height:32px;object-fit:contain;opacity:.86;transition:transform .18s,opacity .18s}
+.species-picker button[aria-pressed="true"] img{opacity:1}
+.species-picker button[data-species="willow"] img,.species-picker button[data-species="muhly"] img,.species-picker button[data-species="needle"] img{width:35px;height:35px}
+.species-picker button:active img{transform:translateY(-3px);opacity:1}
+@media(hover:hover){
+ #weather button:hover,#sound:hover,nav button:hover{color:#355e49}
+ .species-picker button:hover img{transform:translateY(-1px);opacity:1}
+ .species-picker button:active img{transform:translateY(-3px)}
 }
+main[data-scene="rain"]{background:#a5b6ad}
+main[data-scene="rain"]::before{opacity:.15;z-index:0}
+@media(max-width:720px){
+ #weather{top:calc(28px + env(safe-area-inset-top,0px));right:calc(18px + env(safe-area-inset-right,0px))}
+ #sound{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+ nav{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+ .species-picker{bottom:calc(88px + env(safe-area-inset-bottom,0px));gap:4px}
+}
+main[data-scene="moon"]{background:#1c3041;color-scheme:dark}
+main[data-scene="moon"]::before{opacity:.07}
+main[data-scene="moon"] #weather button,main[data-scene="moon"] #sound{color:#9db8c2}
+main[data-scene="moon"] #weather button[aria-pressed="true"]{color:#e0ece5}
+main[data-scene="moon"] #breeze{color:#b9cfc8}
+main[data-scene="moon"] #reset{color:#8faab7}
+main[data-scene="moon"] .species-picker button[aria-pressed="true"]::after{background:#bed0d5}
+main[data-scene="moon"] button:focus-visible{outline-color:#b9d4d7}
+@media(hover:hover){main[data-scene="moon"] #weather button:hover,main[data-scene="moon"] #sound:hover,main[data-scene="moon"] nav button:hover{color:#e0ece5}}
+@media(max-height:480px) and (min-width:540px){.species-picker{bottom:calc(22px + env(safe-area-inset-bottom,0px));gap:0}.species-picker button{width:40px}}
+@media(min-width:721px) and (max-width:850px){.species-picker{gap:0}}
+@media(max-width:360px){.species-picker{gap:0}}
+main[data-species="needle"]{--sky-top:#c6d5c6;--sky-middle:#dce5d5;--canopy-haze:#b9cba579;--garden-haze:#a8be9340;--low-light:#e3e9c96b}
+@media(prefers-reduced-motion:reduce){#weather button,#sound,nav button,.species-picker img{transition:none}.species-picker button:hover img,.species-picker button:active img{transform:none}}
+
+.species-picker button[data-species="needle"] img{width:37px;height:37px;filter:drop-shadow(0 1px 1.5px #62734d65)}
+
+/* Separate fine green/silver silhouettes from the rain's grey-green ground. */
+main[data-scene="rain"] .species-picker button[data-species="willow"] img{opacity:1;filter:brightness(.76) contrast(1.25) saturate(1.08) drop-shadow(0 .5px .35px #374b344d)}
+main[data-scene="rain"] .species-picker button[data-species="needle"] img{opacity:1;filter:contrast(1.22) brightness(1.06) drop-shadow(0 .5px .65px #344b37a6)}
+
+/* Muted ink on wet ground; soft blue-grey marks in moonlight. */
+main[data-scene="rain"] #sound,main[data-scene="rain"] #breeze{color:#20362f}
+main[data-scene="rain"] #reset{color:#20362f}
+main[data-scene="rain"] .species-picker button[aria-pressed="true"]::after{background:#20362f;height:1px}
+main[data-scene="moon"] #sound,main[data-scene="moon"] #breeze{color:#91a9ac}
+main[data-scene="moon"] #reset{color:#91a9ac}
+main[data-scene="rain"] #sound svg,main[data-scene="rain"] nav svg,main[data-scene="moon"] #sound svg,main[data-scene="moon"] nav svg{stroke-width:1.35}
+main[data-scene="rain"] .species-picker img,main[data-scene="moon"] .species-picker img{opacity:1}
+@media(hover:hover){main[data-scene="rain"] #sound:hover,main[data-scene="rain"] nav button:hover{color:#172b25}main[data-scene="moon"] #sound:hover,main[data-scene="moon"] nav button:hover{color:#b1c3c3}}
+
+main[data-scene="moon"] .species-picker button[aria-pressed="true"]::after{background:#91a9ac;height:1px}
+
+/* Layered natural image icons; dim the whole icon together when inactive. */
+#weather svg{width:32px;height:32px;overflow:visible;opacity:.52;transition:opacity .22s}
+#weather button[aria-pressed="true"] svg{opacity:1}
+#weather .sun-core,#weather .sun-rays,#weather .rain-cloud{transform-origin:12px 12px}
+#weather .scene-animate .sun-core{animation:scene-sun-rise .62s ease-out both}
+#weather .scene-animate .sun-rays{animation:scene-sun-spread .64s ease-out both}
+#weather .scene-animate .rain-cloud{animation:scene-cloud-gather .42s ease-out both}
+#weather .scene-animate .rain-drops image{animation:scene-rain-fall .42s ease-out both}
+#weather .scene-animate .drop-2{animation-delay:.09s}
+#weather .scene-animate .drop-3{animation-delay:.18s}
+#weather .scene-animate .moon-disc{animation:scene-moon-rise .64s ease-out both}
+@keyframes scene-sun-rise{from{transform:translateY(2px) scale(.88);opacity:.45}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes scene-sun-spread{from{transform:scale(.65) rotate(-12deg);opacity:.2}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes scene-cloud-gather{from{transform:translateY(1px) scale(.9);opacity:.45}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes scene-rain-fall{0%{transform:translateY(-3px);opacity:0}55%{opacity:.9}100%{transform:translateY(0);opacity:1}}
+@keyframes scene-moon-rise{from{transform:translateY(3px);opacity:.15}to{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){#weather svg,#weather svg *{animation:none!important;transition:none!important}}
+
+/* Daylight contrast for silver needle grass: muted cool-green air, soft bright ground. */
+main[data-species="needle"][data-scene="day"]{--sky-top:#abc0b6;--sky-middle:#bdcfc3;--sky-horizon:#d4dfd2;--ground:#e7e9dd;--sunlight:#f8f5df70;--canopy-haze:#9eb79c42;--garden-haze:#8fa58730;--low-light:#dee7c92b}
+
+/* Keep every plant inviting, while giving the current specimen more presence. */
+main .species-picker button[aria-pressed="false"] img{opacity:.84}
+main .species-picker button[aria-pressed="true"] img{opacity:1}
+@media(hover:hover){main .species-picker button:hover img{opacity:1}}
+main .species-picker button:active img{opacity:1}
+nav{gap:12px}
+#immersive{color:#7a8c80}
+main[data-scene="rain"] #immersive{color:#20362f}
+main[data-scene="moon"] #immersive{color:#91a9ac}
+#immersive .leave-quiet,#immersive[aria-pressed="true"] .enter-quiet{display:none}
+#immersive[aria-pressed="true"] .leave-quiet{display:initial}
+#weather,#sound,.species-picker,#breeze,#reset{transition:opacity .28s ease,visibility .28s}
+main.is-immersive #weather,main.is-immersive #sound,main.is-immersive .species-picker,main.is-immersive #breeze,main.is-immersive #reset{opacity:0;visibility:hidden;pointer-events:none}
+main.is-immersive #immersive{opacity:.5;transition:opacity .2s}
+main.is-immersive #immersive:hover,main.is-immersive #immersive:focus-visible{opacity:1}
+@media(prefers-reduced-motion:reduce){#weather,#sound,.species-picker,#breeze,#reset,#immersive{transition:none!important}}
+
+/* Secondary actions unfold locally; the plant and scene choices stay direct. */
+#tools{position:absolute;z-index:3;left:calc(24px + env(safe-area-inset-left,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));transition:opacity .28s ease,visibility .28s}
+#tools-toggle,#tool-actions button{position:relative;inset:auto;width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#607c6c}
+#tool-actions{position:absolute;bottom:56px;left:0;display:flex;flex-direction:column;gap:8px;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(4px);transition:opacity .18s,transform .18s,visibility .18s}
+#tools.is-open #tool-actions{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
+#tools-toggle .tools-close,#tools.is-open .tools-more{display:none}
+#tools.is-open .tools-close{display:initial}
+main[data-scene="rain"] #tools-toggle,main[data-scene="rain"] #tool-actions button{color:#20362f}
+main[data-scene="moon"] #tools-toggle,main[data-scene="moon"] #tool-actions button{color:#91a9ac}
+main.is-immersive #tools{opacity:0;visibility:hidden;pointer-events:none}
+@media(hover:hover){#tools button:hover{color:#355e49}main[data-scene="rain"] #tools button:hover{color:#172b25}main[data-scene="moon"] #tools button:hover{color:#b1c3c3}}
+@media(max-width:720px){#tools{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px))}#tool-actions{left:56px;bottom:0;flex-direction:row;transform:translateX(-4px)}#tools.is-open #tool-actions{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){#tools,#tool-actions{transition:none!important}}
+
+/* Fine silver awns remain clear against a clean, grain-free sky. */
+main[data-species="needle"]::before{opacity:0}
+
+/* Thin pale specimens need less fading than broad, saturated leaves. */
+main .species-picker button[data-species="needle"][aria-pressed="false"] img{opacity:.96;filter:contrast(1.18) brightness(.91) drop-shadow(0 .5px .5px #53694960)}
+main[data-scene="moon"] .species-picker button[data-species="needle"][aria-pressed="false"] img{filter:contrast(1.10) brightness(1.04) drop-shadow(0 .5px .5px #344b3760)}
+main[data-scene="rain"] .species-picker button[data-species="willow"][aria-pressed="false"] img{opacity:.96}
